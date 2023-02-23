@@ -1,0 +1,24 @@
+{
+  "name": "z2spotify",
+  "version": "1.0.0",
+  "description": "gather spotify api data",
+  "main": "index.js",
+  "scripts": {
+    "test": "test",
+    "start": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beneweiler1/Z2EntAnalysis.git"
+  },
+  "author": "ben weiler",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/beneweiler1/Z2EntAnalysis/issues"
+  },
+  "homepage": "https://github.com/beneweiler1/Z2EntAnalysis#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-fetch": "^3.3.0"
+  }
+}
