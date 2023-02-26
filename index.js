@@ -20,7 +20,7 @@ app.get("/", (req, res) => {
       "<a href='https://accounts.spotify.com/authorize?client_id=" + process.env.CLIENT_ID +
        "&response_type=code&redirect_uri=" + process.env.URI_ENCODED + "&scope=user-top-read'>Sign in</a>"
     );
-  }); 
+  }) 
   
 
   app.get("/account", async (req, res) => {
@@ -40,14 +40,14 @@ app.get("/", (req, res) => {
         }
       );
       token = String(spotifyResponse.data.access_token);
+      console.log(token)
       res.redirect('/data');
-      });
+      })
+      
+      app.get("/data/:artist", async (req, res) => {
 
-      
-      
-      app.get("/data", async (req, res) => {
         const data = await axios.get(
-          "https://api.spotify.com/v1/search?q=alison%20wonderland&type=artist&limit=5",
+          "https://api.spotify.com/v1/search?q=" + req.params.artist +"&type=artist&limit=5",
           {
             headers: {
               Authorization: "Bearer " + token,
@@ -55,18 +55,58 @@ app.get("/", (req, res) => {
           }
         );
         let artistId = data.data.artists.items[0].id
-        console.log(artistId)
         const artistInfo = await axios.get(
-          "	https://api.spotify.com/v1/artists/"+artistId+"/related-artists?limit=5",
+          "https://api.spotify.com/v1/artists/"+artistId+"/related-artists?limit=5",
           {
             headers: {
               Authorization: "Bearer " + token,
             },
           }
         );
-        console.log(artistInfo.data)
-        res.send(artistInfo.data)
-      }); 
+        //console.log(artistInfo.data.artists)
 
+        res.send(artistInfo.data.artists[0])
+        //res.redirect(artistInfo.data.artists[0].external_urls.spotify)
+      }) 
 
-     
+     app.get("/playlist/:id", async (req, res) => {
+      try{
+        token = "BQBAJSln5dVj9FeB-fs-eJvUrA-B23el_MCawM6b_BcykKANAiwKHoVxfN9e2H7SAhTaw3xw3-ty6Vb6OGruAoVnQ9kg7nOMvF22K-L1SO-rF4AXLAeY_Iq1Rh1hYOp64UYt5ujAGR84O-3E0lYvjKDq7dOvycGXlba6ipu7972EPTP-LIP1jD2b3iRko2x_r7NZX1HDG14";
+        const playlistData = await axios.get(
+          "https://api.spotify.com/v1/playlists/" + req.params.id + "/tracks",
+          {
+            headers: {
+              Authorization: "Bearer " + token,
+            },
+          }
+        );
+        const songs = []
+  
+        for(const items of playlistData.data.items){
+          console.log(items.track.name);
+        }
+        console.log(playlistData.data.items[0].track.name)
+        console.log(playlistData.data.items[0].track.popularity)
+        console.log(playlistData.data.items[0].track.id)
+        console.log(playlistData.data.items[0].track.album.release_date)
+        res.send(playlistData.data.items)
+      }
+      catch(error){
+        res.status(500).send(error);
+      }
+    })
+
+    app.get('/song/:id', async (req, res) => {
+        token = "BQBAJSln5dVj9FeB-fs-eJvUrA-B23el_MCawM6b_BcykKANAiwKHoVxfN9e2H7SAhTaw3xw3-ty6Vb6OGruAoVnQ9kg7nOMvF22K-L1SO-rF4AXLAeY_Iq1Rh1hYOp64UYt5ujAGR84O-3E0lYvjKDq7dOvycGXlba6ipu7972EPTP-LIP1jD2b3iRko2x_r7NZX1HDG14";
+        const songData = await axios.get(
+          "https://api.spotify.com/v1/audio-features/" + req.params.id,
+          {
+            headers: {
+              Authorization: "Bearer " + token,
+            },
+          }
+        );
+        console.log(songData.data);
+        res.send(songData.data);
+    })
+
