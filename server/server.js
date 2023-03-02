@@ -81,23 +81,22 @@ app.get("/", (req, res) => {
         //res.redirect(artistInfo.data.artists[0].external_urls.spotify)
       }) 
 
-     app.get("/playlist/:id", async (req, res) => {
+     app.get("/playlist/:id/:token", async (req, res) => {
       try{
         const playlistData = await axios.get(
           "https://api.spotify.com/v1/playlists/" + req.params.id + "/tracks",
           {
             headers: {
-              Authorization: "Bearer " + token,
+              Authorization: "Bearer " + req.params.token,
             },
           }
         );
-        const songs = []
+        let songs = []
         let song = {}
-        for(const items of playlistData.data.items){
-          song = {name:items.track.name, id: items.track.id, releaseDate:items.track.album.release_date}
+        for(const tracks of playlistData.data.items){
+          song = {'name':tracks.track.name, 'id':tracks.track.id,'artist':tracks.track.artists[0].name, 'releaseDate':tracks.track.album.release_date,'popularity':tracks.track.popularity}
           songs.push(song)
         }
-        console.log(songs)
         res.send(songs)
       }
       catch(error){
@@ -155,9 +154,9 @@ app.get("/", (req, res) => {
           );
           let songRecData = []
           let songRec = {}
+          console.log(recData.data)
           for(const tracks of recData.data.tracks){
             songRec = {'name':tracks.name, 'id':tracks.id, 'popularity':tracks.popularity, 'release_date': items.track.album.release_date}
-            console.log(songRec)
             songRecData.push(songRec)
 
           }
@@ -182,8 +181,9 @@ app.get("/", (req, res) => {
           let songRecData = []
           let songRec = {}
           for(const tracks of recData.data.tracks){
+            console.log(tracks.album.artists[0].name)
             console.log(tracks.album.release_date)
-            songRec = {'name':tracks.name, 'id':tracks.id, 'popularity':tracks.popularity,'release_date':tracks.album.release_date}
+            songRec = {'name':tracks.name, 'id':tracks.id, 'artist':tracks.album.artists[0].name, 'popularity':tracks.popularity,'release_date':tracks.album.release_date}
             songRecData.push(songRec)
 
           }
