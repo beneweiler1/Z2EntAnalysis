@@ -114,6 +114,7 @@ app.get("/", (req, res) => {
             },
           }
         );
+        console.log(songData)
         //dancability
         //engery
         //key
@@ -131,7 +132,7 @@ app.get("/", (req, res) => {
           loudness:sData.loudness,
           speechiness:sData.speechiness,
           acousticness: sData.acousticness,
-          instramentalness:sData.instramentalness,
+          instrumentalness:sData.instrumentalness,
           liveness: sData.liveness,
           valence: sData.valence,
           tempo: sData.tempo
@@ -139,6 +140,45 @@ app.get("/", (req, res) => {
         console.log(song);
         res.send(song);
     })
+
+
+    app.get('/getSongs/:token', async(req, res) => {
+
+        const songData = await axios.get(
+          "https://api.spotify.com/v1/audio-features/7ouMYWpwJ422jRcDASZB7P%2C4VqPOruhp5EdPBeR92t6lQ%2C5mHdCZtVyb4DcJw8799hZp%2C7d2RGPmshGxHGhrBxhMND92takcwOaAZWiXQijPHIx7B%2C6FYbr9QzRoZPh0Re8lDO9z",
+          {
+            headers: {
+              Authorization: "Bearer " + req.params.token,
+            },
+          }
+        );
+        console.log(songData.data)
+        //dancability
+        //engery
+        //key
+        //loudness
+        //speechiness
+        //acousticness
+        //instramentalness
+        //liveness
+        //valence
+        //tempo
+        const sData = songData.data
+        let song = {danceability:sData.danceability,
+          energy:sData.energy,
+          key:sData.key,
+          loudness:sData.loudness,
+          speechiness:sData.speechiness,
+          acousticness: sData.acousticness,
+          instrumentalness:sData.instrumentalness,
+          liveness: sData.liveness,
+          valence: sData.valence,
+          tempo: sData.tempo
+        }
+        console.log(song);
+        res.send(song);
+    })
+
 
     app.get("/getPlaylistRec/:limit/:genre/:minpop/:maxpop", async (req, res) => {
         //token ="BQCD4OATmg3W44peHS07Z6YpgJOdfdNqiabXz82MGZDqQsziO3EWhCu-UAXZI5zQ4KcFebLzvXGAPr-43UjAbTBhMv4cLveNMk52-4P4zg87HGVvhSsj8Hm7LBnZ3ScN0Q6IgLVhVR4pqIUgQ66xRFt6dPY43-4pu1zRT42ILpYmwNiIFJfcYatB54Zxmp44qqIIchTPUAk"
@@ -154,7 +194,7 @@ app.get("/", (req, res) => {
           );
           let songRecData = []
           let songRec = {}
-          console.log(recData.data)
+          //console.log(recData.data)
           for(const tracks of recData.data.tracks){
             songRec = {'name':tracks.name, 'id':tracks.id, 'popularity':tracks.popularity, 'release_date': items.track.album.release_date}
             songRecData.push(songRec)
@@ -181,8 +221,8 @@ app.get("/", (req, res) => {
           let songRecData = []
           let songRec = {}
           for(const tracks of recData.data.tracks){
-            console.log(tracks.album.artists[0].name)
-            console.log(tracks.album.release_date)
+            //console.log(tracks.album.artists[0].name)
+            //console.log(tracks.album.release_date)
             songRec = {'name':tracks.name, 'id':tracks.id, 'artist':tracks.album.artists[0].name, 'popularity':tracks.popularity,'release_date':tracks.album.release_date}
             songRecData.push(songRec)
 

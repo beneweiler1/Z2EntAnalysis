@@ -56,11 +56,11 @@ app.get('/putItems/:id/:name', async (req, res) => {
   }
 })
 
-async function addData(id, name, artist, release_date, popularity){
+async function addData(id, name, artist, release_date, popularity) {
   try {
     const result = await dynamoDB.put({
       TableName: tableName,
-      Item: { id, name, artist, release_date, popularity}
+      Item: { id, name, artist, release_date, popularity }
     }).promise();
 
     return result;
@@ -68,6 +68,18 @@ async function addData(id, name, artist, release_date, popularity){
     console.error(err);
   }
 }
+
+
+// async function collectAllData(
+//   currSongId,
+//   token //remember to not pass token
+// ){
+//   const recData = await axios.get(
+//     "http://localhost:8080/getSongRec/" + 100 + "/" + currSongId + "/" + token.data,
+//   );
+//   return recData
+// }
+
 
 async function editData(
   id,
@@ -81,19 +93,18 @@ async function editData(
   loudness,
   speechiness,
   acousticness,
-  instramentalness,
+  instrumentalness,
   liveness,
   valence,
   tempo
-  )
-  {
+) {
   try {
     const result = await dynamoDB.put({
       TableName: tableName,
       Item: {
         id,
         name,
-        artist, 
+        artist,
         release_date,
         popularity,
         danceability,
@@ -102,10 +113,11 @@ async function editData(
         loudness,
         speechiness,
         acousticness,
-        instramentalness,
+        instrumentalness,
         liveness,
         valence,
-        tempo}
+        tempo
+      }
     }).promise();
 
     return result;
@@ -117,26 +129,41 @@ async function editData(
 
 app.get('/addPlaylist/:playlistId', async (req, res) => {
   try {
-    console.log('here')
-
     const token = await axios.get(
       "http://localhost:8080/getToken"
     );
 
-      const recData = await axios.get(
-        "http://localhost:8080/playlist/" + req.params.playlistId + "/" + token.data,
-      );
+    const recData = await axios.get(
+      "http://localhost:8080/playlist/" + req.params.playlistId + "/" + token.data,
+    );
 
-      for(let size = 0; size < recData.data.length; size++){
-        addData(recData.data[size].id,
-          recData.data[size].name,
-          recData.data[size].artist,
-          recData.data[size].releaseDate,
-          recData.data[size].popularity);
-      }
+    for (let size = 0; size < recData.data.length; size++) {
+      let songData = await axios.get(
+        "http://localhost:8080/getSong/" + recData.data[size].id + "/" + token.data,
+      );
+      //find a way to get all song data 
+      //append string all of id's
+      let s = songData.data
+      editData(
+        recData.data[size].id,
+        recData.data[size].name,
+        recData.data[size].artist,
+        recData.data[size].release_date,
+        recData.data[size].popularity,
+        s.danceability,
+        s.energy,
+        s.key,
+        s.loudness,
+        s.speechiness,
+        s.acousticness,
+        s.instrumentalness,
+        s.liveness,
+        s.valence,
+        s.tempo)
+    }
 
     res.send('done!')
-  
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -145,111 +172,116 @@ app.get('/addPlaylist/:playlistId', async (req, res) => {
 
 
 app.get('/collectData', async (req, res) => {
-    try {
-      const tableSongs = await dynamoDB.scan({
-        TableName: tableName,
-      }).promise();
-      console.log(tableSongs.length)
-  
-      if (tableSongs.Count === 0) {
-        return res.status(404).json({ error: 'Item not found' });
-      }
+  try {
+    const tableSongs = await dynamoDB.scan({
+      TableName: tableName,
+    }).promise();
+    console.log(tableSongs.length)
 
-      const token = await axios.get(
-        "http://localhost:8080/getToken"
-      );
-
-      for(let index = 0; index < tableSongs.Items.length; index++){
-        currSongId = tableSongs.Items[index].id
-        const recData = await axios.get(
-          "http://localhost:8080/getSongRec/" + 1 + "/" + currSongId + "/" + token.data,
-        );
-        console.log(recData.data)
-        for(let size = 0; size < recData.data.length; size++){
-          addData(recData.data[size].id, 
-            recData.data[size].name,
-            recData.data[size].artist,
-            recData.data[size].release_date,
-            recData.data[size].popularity);
-        }
-      }
-      res.send('done!')
-    
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Internal Server Error' });
+    if (tableSongs.Count === 0) {
+      return res.status(404).json({ error: 'Item not found' });
     }
-  });
 
-  app.get('/collectAllData', async (req, res) => {
-    try {
-      const tableSongs = await dynamoDB.scan({
-        TableName: tableName,
-      }).promise();
-  
-      if (tableSongs.Count === 0) {
-        return res.status(404).json({ error: 'Item not found' });
-      }
+    const token = await axios.get(
+      "http://localhost:8080/getToken"
+    );
 
-      const token = await axios.get(
-        "http://localhost:8080/getToken"
+    for (let index = 0; index < tableSongs.Items.length; index++) {
+      currSongId = tableSongs.Items[index].id
+      const recData = await axios.get(
+        "http://localhost:8080/getSongRec/" + 1 + "/" + currSongId + "/" + token.data,
       );
-
-      for(let index = 0; index < tableSongs.Items.length; index++){
-        currSongId = tableSongs.Items[index].id
-        const recData = await axios.get(
-          "http://localhost:8080/getSongRec/" + 1 + "/" + currSongId + "/" + token.data,
-        );
-        for(let size = 0; size < recData.data.length; size++){
-          let songData = await axios.get(
-            "http://localhost:8080/getSong/"+ recData.data[size].id + "/" + token.data,
-          );
-          let s = songData.data
-          editData(
-            recData.data[size].id,
-            recData.data[size].name,
-            recData.data[size].artist,
-            recData.data[size].release_date,
-            recData.data[size].popularity,
-            s.danceability,
-            s.energy,
-            s.key,
-            s.loudness,
-            s.speechiness,
-            s.acousticness,
-            s.instramentalness,
-            s.liveness,
-            s.valence,
-            s.tempo)
-        }
+      console.log(recData.data)
+      for (let size = 0; size < recData.data.length; size++) {
+        addData(recData.data[size].id,
+          recData.data[size].name,
+          recData.data[size].artist,
+          recData.data[size].release_date,
+          recData.data[size].popularity);
       }
-      res.send('done!')
-    
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Internal Server Error' });
     }
-  });
+    res.send('done!')
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.get('/collectAllData', async (req, res) => {
+  try {
+    const tableSongs = await dynamoDB.scan({
+      TableName: tableName,
+    }).promise();
+
+    if (tableSongs.Count === 0) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    const token = await axios.get(
+      "http://localhost:8080/getToken"
+    );
 
 
-  app.get('/editData', async(req,res) => {
-    try {
-      const tableSongs = await dynamoDB.scan({
-        TableName: tableName,
-      }).promise();
-  
-      if (tableSongs.Count === 0) {
-        return res.status(404).json({ error: 'Item not found' });
-      }
+    let start = tableSongs.Items.length - 1000;
 
-      const token = await axios.get(
-        "http://localhost:8080/getToken"
+    for (let index = start; index < tableSongs.Items.length; index++) {
+      currSongId = tableSongs.Items[index].id
+      const recData = await axios.get(
+        "http://localhost:8080/getSongRec/" + 100 + "/" + currSongId + "/" + token.data,
       );
-      console.log(token.data)
-      
-      for(let itemIndex = 0; itemIndex < tableSongs.Items.length; itemIndex++){
+      for (let size = 0; size < recData.data.length; size++) {
         let songData = await axios.get(
-          "http://localhost:8080/getSong/"+tableSongs.Items[itemIndex].id + "/" + token.data,
+          "http://localhost:8080/getSong/" + recData.data[size].id + "/" + token.data,
+        );
+        //find a way to get all song data 
+        //append string all of id's
+        let s = songData.data
+        editData(
+          recData.data[size].id,
+          recData.data[size].name,
+          recData.data[size].artist,
+          recData.data[size].release_date,
+          recData.data[size].popularity,
+          s.danceability,
+          s.energy,
+          s.key,
+          s.loudness,
+          s.speechiness,
+          s.acousticness,
+          s.instrumentalness,
+          s.liveness,
+          s.valence,
+          s.tempo)
+      }
+    }
+    res.send('done!')
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.get('/editData', async (req, res) => {
+  try {
+    const tableSongs = await dynamoDB.scan({
+      TableName: tableName,
+    }).promise();
+
+    if (tableSongs.Count === 0) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    const token = await axios.get(
+      "http://localhost:8080/getToken"
+    );
+    console.log(token.data)
+
+    for (let itemIndex = 0; itemIndex < tableSongs.Items.length; itemIndex++) {
+      if (tableSongs.Items[itemIndex].instrumentalness == undefined){
+        let songData = await axios.get(
+          "http://localhost:8080/getSong/" + tableSongs.Items[itemIndex].id + "/" + token.data,
         );
         let s = songData.data
         editData(
@@ -264,18 +296,22 @@ app.get('/collectData', async (req, res) => {
           s.loudness,
           s.speechiness,
           s.acousticness,
-          s.instramentalness,
+          s.instrumentalness,
           s.liveness,
           s.valence,
           s.tempo)
       }
-      res.send('done!')
-
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Internal Server Error' });
+      else{
+        console.log(tableSongs.Items[itemIndex].tempo)
+      }
     }
-  })
+    res.send('done!')
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+})
 
       //take playlist
       //get songs name and id and store them into the db
