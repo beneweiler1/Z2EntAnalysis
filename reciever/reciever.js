@@ -15,10 +15,14 @@ const dynamoDB = new AWS.DynamoDB.DocumentClient({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
 });
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
 // Start the Express application
 app.listen(port, () => {
   console.log('Server listening on port 4200');
-  //editData('7fM3iJ14tE5SX1L1TVpf7p', 'So Long - Tails Remix','2021-06-25',0, 1, 5, 456, 4, 456, 546, 45, 45, 5, 5);
 });
 
 // Define a route that queries the DynamoDB table
@@ -119,7 +123,6 @@ async function editData(
         tempo
       }
     }).promise();
-
     return result;
   } catch (err) {
     console.error(err);
@@ -208,6 +211,10 @@ app.get('/collectData', async (req, res) => {
   }
 });
 
+
+
+
+
 app.get('/collectAllData', async (req, res) => {
   try {
     const tableSongs = await dynamoDB.scan({
@@ -221,40 +228,53 @@ app.get('/collectAllData', async (req, res) => {
     const token = await axios.get(
       "http://localhost:8080/getToken"
     );
-
-
-    let start = tableSongs.Items.length - 1000;
-
-    for (let index = start; index < tableSongs.Items.length; index++) {
-      currSongId = tableSongs.Items[index].id
+    //for songs in tableSongs
+    //get all items in song rec
+    //formulate id string
+    //getSongs
+    //concatinate recData(from rec) with getSongsAnalysis
+    //call edit Data
+    console.log(tableSongs.Items.length)
+    for (let index = 0; index < tableSongs.Items.length; index++) {
+      currSongId = tableSongs.Items[0].id
       const recData = await axios.get(
         "http://localhost:8080/getSongRec/" + 100 + "/" + currSongId + "/" + token.data,
       );
+      idsArr = []
+      for (const data of recData.data) {
+        idsArr.push(data.id)
+      }
+      let IdString = idsArr.join('%2C')
+
+      let songData = await axios.get(
+        "http://localhost:8080/getSongsAnalysis/" + IdString + "/" + token.data,
+      );
+      
       for (let size = 0; size < recData.data.length; size++) {
-        let songData = await axios.get(
-          "http://localhost:8080/getSong/" + recData.data[size].id + "/" + token.data,
-        );
-        //find a way to get all song data 
-        //append string all of id's
-        let s = songData.data
-        editData(
-          recData.data[size].id,
-          recData.data[size].name,
-          recData.data[size].artist,
-          recData.data[size].release_date,
-          recData.data[size].popularity,
-          s.danceability,
-          s.energy,
-          s.key,
-          s.loudness,
-          s.speechiness,
-          s.acousticness,
-          s.instrumentalness,
-          s.liveness,
-          s.valence,
-          s.tempo)
+        let s = songData.data[size]
+        console.log(recData.data[size].name)
+        if (recData.data[size].id == s.id) {
+          editData(
+            recData.data[size].id,
+            recData.data[size].name,
+            recData.data[size].artist,
+            recData.data[size].release_date,
+            recData.data[size].popularity,
+            s.danceability,
+            s.energy,
+            s.key,
+            s.loudness,
+            s.speechiness,
+            s.acousticness,
+            s.instrumentalness,
+            s.liveness,
+            s.valence,
+            s.tempo)
+        }
+        await sleep(100)
       }
     }
+
     res.send('done!')
 
   } catch (err) {
@@ -279,7 +299,7 @@ app.get('/editData', async (req, res) => {
     console.log(token.data)
 
     for (let itemIndex = 0; itemIndex < tableSongs.Items.length; itemIndex++) {
-      if (tableSongs.Items[itemIndex].instrumentalness == undefined){
+      if (tableSongs.Items[itemIndex].instrumentalness == undefined) {
         let songData = await axios.get(
           "http://localhost:8080/getSong/" + tableSongs.Items[itemIndex].id + "/" + token.data,
         );
@@ -300,8 +320,9 @@ app.get('/editData', async (req, res) => {
           s.liveness,
           s.valence,
           s.tempo)
+          sleep()
       }
-      else{
+      else {
         console.log(tableSongs.Items[itemIndex].tempo)
       }
     }

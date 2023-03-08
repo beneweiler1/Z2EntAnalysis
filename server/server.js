@@ -11,6 +11,7 @@ let token = ""
 //https://developer.spotify.com/console/get-search-item/?q=remaster%2520track%3ADoxy%2520artist%3AMiles%2520Davis&type=&market=ES&limit=10&offset=5&include_external=
 
 
+
 function getCookie(cookie) {
   const parts = cookie.split(':');
   console.log(parts[1])
@@ -141,47 +142,46 @@ app.get("/", (req, res) => {
         res.send(song);
     })
 
+    
+    // function idStringBuilder(ids){
 
-    app.get('/getSongs/:token', async(req, res) => {
+    // }
 
+    app.get('/getSongsAnalysis/:ids/:token', async(req, res) => {
         const songData = await axios.get(
-          "https://api.spotify.com/v1/audio-features/7ouMYWpwJ422jRcDASZB7P%2C4VqPOruhp5EdPBeR92t6lQ%2C5mHdCZtVyb4DcJw8799hZp%2C7d2RGPmshGxHGhrBxhMND92takcwOaAZWiXQijPHIx7B%2C6FYbr9QzRoZPh0Re8lDO9z",
+          "https://api.spotify.com/v1/audio-features?ids=" + req.params.ids,
           {
             headers: {
               Authorization: "Bearer " + req.params.token,
             },
           }
         );
-        console.log(songData.data)
-        //dancability
-        //engery
-        //key
-        //loudness
-        //speechiness
-        //acousticness
-        //instramentalness
-        //liveness
-        //valence
-        //tempo
-        const sData = songData.data
-        let song = {danceability:sData.danceability,
-          energy:sData.energy,
-          key:sData.key,
-          loudness:sData.loudness,
-          speechiness:sData.speechiness,
-          acousticness: sData.acousticness,
-          instrumentalness:sData.instrumentalness,
-          liveness: sData.liveness,
-          valence: sData.valence,
-          tempo: sData.tempo
+        
+        let songs = []
+
+        const sData = songData.data.audio_features
+        for(let s = 0; s < sData.length; s++){
+          let song = {
+            id: sData[s].id,
+            danceability:sData[s].danceability,
+            energy:sData[s].energy,
+            key:sData[s].key,
+            loudness:sData[s].loudness,
+            speechiness:sData[s].speechiness,
+            acousticness: sData[s].acousticness,
+            instrumentalness:sData[s].instrumentalness,
+            liveness: sData[s].liveness,
+            valence: sData[s].valence,
+            tempo: sData[s].tempo
+          }
+          songs.push(song)
         }
-        console.log(song);
-        res.send(song);
+        res.send(songs);
     })
 
 
     app.get("/getPlaylistRec/:limit/:genre/:minpop/:maxpop", async (req, res) => {
-        //token ="BQCD4OATmg3W44peHS07Z6YpgJOdfdNqiabXz82MGZDqQsziO3EWhCu-UAXZI5zQ4KcFebLzvXGAPr-43UjAbTBhMv4cLveNMk52-4P4zg87HGVvhSsj8Hm7LBnZ3ScN0Q6IgLVhVR4pqIUgQ66xRFt6dPY43-4pu1zRT42ILpYmwNiIFJfcYatB54Zxmp44qqIIchTPUAk"
+    
         try{
           const recData = await axios.get(
             //"https://api.spotify.com/v1/recommendations?limit=100&seed_genres=country&min_popularity=1&max_popularity=100",
