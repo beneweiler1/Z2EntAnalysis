@@ -5,7 +5,7 @@ const port = 4200;
 const AWS = require('aws-sdk');
 const dotenv = require('dotenv');
 const tableName = 'SpotifySongData'
-// Load environment variables from .env file
+
 dotenv.config();
 
 // Create a new DynamoDB client
@@ -20,45 +20,7 @@ function sleep(ms) {
 }
 
 
-// Start the Express application
-app.listen(port, () => {
-  console.log('Server listening on port 4200');
-});
-
-// Define a route that queries the DynamoDB table
-app.get('/getItems', async (req, res) => {
-  try {
-    const result = await dynamoDB.scan({
-      TableName: tableName,
-    }).promise();
-    console.log(result.Items.length)
-    res.json(result.Items);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-
-app.get('/putItems/:id/:name', async (req, res) => {
-  const { id, name, popularity } = req.params;
-
-  if (!id || !name || !popularity) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-
-  try {
-    const result = await dynamoDB.put({
-      TableName: tableName,
-      Item: { id, name, popularity }
-    }).promise();
-
-    res.json(result);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-})
+//Functions for adding and editing DB data
 
 async function addData(id, name, artist, release_date, popularity) {
   try {
@@ -73,19 +35,9 @@ async function addData(id, name, artist, release_date, popularity) {
   }
 }
 
-
-// async function collectAllData(
-//   currSongId,
-//   token //remember to not pass token
-// ){
-//   const recData = await axios.get(
-//     "http://localhost:8080/getSongRec/" + 100 + "/" + currSongId + "/" + token.data,
-//   );
-//   return recData
-// }
-
-
 async function editData(
+  //genre
+  //
   id,
   name,
   artist,
@@ -129,6 +81,32 @@ async function editData(
   }
 }
 
+// Start the Express application
+app.listen(port, () => {
+  console.log('Server listening on port 4200');
+});
+
+app.get("/", (req, res) => {
+  res.send('hello');
+});
+
+
+
+// get Items from DynamoDb
+app.get('/getItems', async (req, res) => {
+  try {
+    const result = await dynamoDB.scan({
+      TableName: tableName,
+    }).promise();
+    console.log(result.Items.length)
+    res.json(result.Items);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+//add playlist to DB
 
 app.get('/addPlaylist/:playlistId', async (req, res) => {
   try {
@@ -144,8 +122,7 @@ app.get('/addPlaylist/:playlistId', async (req, res) => {
       let songData = await axios.get(
         "http://localhost:8080/getSong/" + recData.data[size].id + "/" + token.data,
       );
-      //find a way to get all song data 
-      //append string all of id's
+
       let s = songData.data
       editData(
         recData.data[size].id,
@@ -211,10 +188,6 @@ app.get('/collectData', async (req, res) => {
   }
 });
 
-
-
-
-
 app.get('/collectAllData', async (req, res) => {
   try {
     const tableSongs = await dynamoDB.scan({
@@ -228,50 +201,53 @@ app.get('/collectAllData', async (req, res) => {
     const token = await axios.get(
       "http://localhost:8080/getToken"
     );
-    //for songs in tableSongs
-    //get all items in song rec
-    //formulate id string
-    //getSongs
-    //concatinate recData(from rec) with getSongsAnalysis
-    //call edit Data
+
     console.log(tableSongs.Items.length)
     for (let index = 0; index < tableSongs.Items.length; index++) {
-      currSongId = tableSongs.Items[0].id
+      currSongId = tableSongs.Items[index].id
       const recData = await axios.get(
         "http://localhost:8080/getSongRec/" + 100 + "/" + currSongId + "/" + token.data,
       );
       idsArr = []
       for (const data of recData.data) {
-        idsArr.push(data.id)
+        if (data.id != undefined) {
+          idsArr.push(data.id)
+        }
       }
       let IdString = idsArr.join('%2C')
 
       let songData = await axios.get(
         "http://localhost:8080/getSongsAnalysis/" + IdString + "/" + token.data,
       );
-      
+
       for (let size = 0; size < recData.data.length; size++) {
         let s = songData.data[size]
-        console.log(recData.data[size].name)
-        if (recData.data[size].id == s.id) {
-          editData(
-            recData.data[size].id,
-            recData.data[size].name,
-            recData.data[size].artist,
-            recData.data[size].release_date,
-            recData.data[size].popularity,
-            s.danceability,
-            s.energy,
-            s.key,
-            s.loudness,
-            s.speechiness,
-            s.acousticness,
-            s.instrumentalness,
-            s.liveness,
-            s.valence,
-            s.tempo)
+        if (s.id != undefined) {
+
+          if (recData.data[size].id == s.id && recData.data[size].name != "") {
+            console.log(recData.data[size].name)
+            editData(
+              //add genre
+              //featured artist
+              //
+              recData.data[size].id,
+              recData.data[size].name,
+              recData.data[size].artist,
+              recData.data[size].release_date,
+              recData.data[size].popularity,
+              s.danceability,
+              s.energy,
+              s.key,
+              s.loudness,
+              s.speechiness,
+              s.acousticness,
+              s.instrumentalness,
+              s.liveness,
+              s.valence,
+              s.tempo)
+          }
+          await sleep(500)
         }
-        await sleep(100)
       }
     }
 
@@ -320,7 +296,7 @@ app.get('/editData', async (req, res) => {
           s.liveness,
           s.valence,
           s.tempo)
-          sleep()
+        sleep()
       }
       else {
         console.log(tableSongs.Items[itemIndex].tempo)
@@ -334,9 +310,3 @@ app.get('/editData', async (req, res) => {
   }
 })
 
-      //take playlist
-      //get songs name and id and store them into the db
-      //loop
-        //go through dynamo and do 2 things
-          //1. append the extra song data to the item in db
-          //2. get song rec based on song add them to db

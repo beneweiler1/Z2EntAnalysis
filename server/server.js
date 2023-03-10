@@ -10,14 +10,6 @@ let token = ""
 //https://medium.com/@awoldt/using-spotify-api-with-javascript-9dd839407f12
 //https://developer.spotify.com/console/get-search-item/?q=remaster%2520track%3ADoxy%2520artist%3AMiles%2520Davis&type=&market=ES&limit=10&offset=5&include_external=
 
-
-
-function getCookie(cookie) {
-  const parts = cookie.split(':');
-  console.log(parts[1])
-  if (parts.length === 2) return parts.pop().split(';').shift();
-}
-
 app.listen(8080, () => {
   console.log("App is listening on port 8080!\n");
 });
@@ -47,8 +39,6 @@ app.get("/", (req, res) => {
         }
       );
       token = String(spotifyResponse.data.access_token);
-      //console.log(token)
-      //res.send(token)
       res.redirect('/data');
       })
 
@@ -57,6 +47,7 @@ app.get("/", (req, res) => {
         console.log(token)
         res.send(token);
       })
+
 
       app.get("/data/:artist", async (req, res) => {
         const data = await axios.get(
@@ -76,10 +67,7 @@ app.get("/", (req, res) => {
             },
           }
         );
-        //console.log(artistInfo.data.artists)
-
         res.send(artistInfo.data.artists[0])
-        //res.redirect(artistInfo.data.artists[0].external_urls.spotify)
       }) 
 
      app.get("/playlist/:id/:token", async (req, res) => {
@@ -116,16 +104,6 @@ app.get("/", (req, res) => {
           }
         );
         console.log(songData)
-        //dancability
-        //engery
-        //key
-        //loudness
-        //speechiness
-        //acousticness
-        //instramentalness
-        //liveness
-        //valence
-        //tempo
         const sData = songData.data
         let song = {danceability:sData.danceability,
           energy:sData.energy,
@@ -142,11 +120,6 @@ app.get("/", (req, res) => {
         res.send(song);
     })
 
-    
-    // function idStringBuilder(ids){
-
-    // }
-
     app.get('/getSongsAnalysis/:ids/:token', async(req, res) => {
         const songData = await axios.get(
           "https://api.spotify.com/v1/audio-features?ids=" + req.params.ids,
@@ -156,7 +129,7 @@ app.get("/", (req, res) => {
             },
           }
         );
-        
+      
         let songs = []
 
         const sData = songData.data.audio_features
@@ -208,7 +181,6 @@ app.get("/", (req, res) => {
       })
 
       app.get("/getSongRec/:limit/:songid/:token", async (req, res) => {
-        //app.get("/getSongRec/:limit/:songid", async (req, res) => {
         try{
           const recData = await axios.get(
             "https://api.spotify.com/v1/recommendations?limit=" + req.params.limit + "&seed_tracks="+req.params.songid,
@@ -221,8 +193,6 @@ app.get("/", (req, res) => {
           let songRecData = []
           let songRec = {}
           for(const tracks of recData.data.tracks){
-            //console.log(tracks.album.artists[0].name)
-            //console.log(tracks.album.release_date)
             songRec = {'name':tracks.name, 'id':tracks.id, 'artist':tracks.album.artists[0].name, 'popularity':tracks.popularity,'release_date':tracks.album.release_date}
             songRecData.push(songRec)
 
@@ -233,9 +203,3 @@ app.get("/", (req, res) => {
           res.status(500).send(error);
         }
       })
-
-      
-      //take playlist
-      //get songs name and id and store them in json
-      //input take a song on playlist and query recommendations
-      //add track name and id to json
